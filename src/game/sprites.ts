@@ -7,7 +7,6 @@ import type { TileType } from './world';
  * (32 game units) is 16 native pixels. Tiles without an entry use a placeholder colour.
  */
 export const TILE_SPRITES: Partial<Record<TileType, ImageSourcePropType>> = {
-  water: require('../../assets/sprites/water.png'),
   sand: require('../../assets/sprites/sand.png'),
   rock: require('../../assets/sprites/rock.png'),
 };
@@ -20,26 +19,64 @@ export const GRASS_SPRITES: ImageSourcePropType[] = [
   require('../../assets/sprites/grass_3.png'),
 ];
 
-/** Transparent tall-grass overlays, drawn on top of a grass tile. */
+/** Tall-grass tiles, drawn over a grass tile. */
 export const TALL_GRASS_SPRITES: ImageSourcePropType[] = [
   require('../../assets/sprites/tallgrass_0.png'),
   require('../../assets/sprites/tallgrass_1.png'),
+  require('../../assets/sprites/tallgrass_2.png'),
+  require('../../assets/sprites/tallgrass_3.png'),
+];
+
+/** Water ripple animation, one image per frame (see waterClock.ts). */
+export const WATER_SPRITES: ImageSourcePropType[] = [
+  require('../../assets/sprites/water_0.png'),
+  require('../../assets/sprites/water_1.png'),
+  require('../../assets/sprites/water_2.png'),
+  require('../../assets/sprites/water_3.png'),
 ];
 
 /**
- * One sprite per kind of tree (oak, pine, autumn), see getTreeVariant in world.ts.
- * Trees are 24 native pixels (1.5 tiles) and drawn on their own layer so neighbours overlap.
+ * Transparent bank pieces drawn over water where it meets land. All are drawn for the north
+ * side / north-east corner and rotated clockwise for the other sides.
  */
-export const TREE_SIZE = 48;
+export const SHORE_SPRITES = {
+  edge: require('../../assets/sprites/shore_edge.png'),
+  corner: require('../../assets/sprites/shore_corner.png'),
+  inner: require('../../assets/sprites/shore_inner.png'),
+} as const;
+
+/**
+ * Tall-grass blades drawn on a short-grass tile where it touches a tall-grass patch, so the
+ * patch edge looks ragged instead of square. Same layout as SHORE_SPRITES.
+ */
+export const FRINGE_SPRITES = {
+  edge: require('../../assets/sprites/fringe_edge.png'),
+  corner: require('../../assets/sprites/fringe_corner.png'),
+  inner: require('../../assets/sprites/fringe_inner.png'),
+} as const;
+
+/** Paved street tiles (village main streets), picked per tile. */
+export const PAVED_SPRITES: ImageSourcePropType[] = [
+  require('../../assets/sprites/paved_0.png'),
+  require('../../assets/sprites/paved_1.png'),
+  require('../../assets/sprites/paved_2.png'),
+  require('../../assets/sprites/paved_3.png'),
+];
+
+/**
+ * One sprite per kind of tree (oak, pine, birch), see getTreeVariant in world.ts.
+ * Trees are 32 native pixels (2 tiles) and drawn on their own layer so neighbours overlap.
+ */
+export const TREE_SIZE = 64;
 /** Distance from the top of the tree sprite to the bottom of its trunk. */
-export const TREE_BASE_Y = 46;
+export const TREE_BASE_Y = 60;
 export const TREE_SPRITES: ImageSourcePropType[] = [
   require('../../assets/sprites/tree_0.png'),
   require('../../assets/sprites/tree_1.png'),
   require('../../assets/sprites/tree_2.png'),
 ];
 
-/** Village buildings, by kind. Houses and the town hall are 64 native pixels (4x4 tiles). */
+/** Village buildings, by kind. Houses are 64 native pixels (4x4 tiles); the town hall and the tavern 80 (5x5). */
 export const BUILDING_SPRITES: Record<string, ImageSourcePropType> = {
   0: require('../../assets/sprites/house_0.png'),
   1: require('../../assets/sprites/house_1.png'),
@@ -50,10 +87,11 @@ export const BUILDING_SPRITES: Record<string, ImageSourcePropType> = {
   6: require('../../assets/sprites/house_6.png'),
   7: require('../../assets/sprites/house_7.png'),
   townhall: require('../../assets/sprites/townhall.png'),
+  tavern: require('../../assets/sprites/tavern.png'),
 };
 
 /**
- * Road pieces, drawn with their arms pointing north. Rotate clockwise to match the neighbours:
+ * Dirt road pieces (with grass around them), drawn with their arms pointing north. Rotate clockwise to match the neighbours:
  * end opens north, straight runs north-south, corner joins north+east, tee misses west.
  */
 export const ROAD_SPRITES = {
@@ -104,6 +142,7 @@ export const TILE_COLORS: Record<TileType, string> = {
   water: '#3b7dd8',
   rock: '#7a7a85',
   road: '#d6b880',
+  paved: '#9c9aa0',
   bridge: '#3b7dd8',
   building: '#5fae4e',
 };

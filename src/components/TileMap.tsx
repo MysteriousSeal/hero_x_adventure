@@ -1,20 +1,26 @@
-import { memo } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { memo, useMemo } from 'react';
+import { Image, ImageSourcePropType, StyleSheet, View } from 'react-native';
 import { TILE_SIZE } from '../game/config';
 import { hash2 } from '../game/noise';
 import {
   BRIDGE_SPRITE,
   BUILDING_SPRITES,
   GRASS_SPRITES,
+  PAVED_SPRITES,
   PIXELATED,
+  FRINGE_SPRITES,
   ROAD_SPRITES,
+  SHORE_SPRITES,
   TALL_GRASS_SPRITES,
   TILE_COLORS,
   TILE_SPRITES,
   TREE_BASE_Y,
   TREE_SIZE,
   TREE_SPRITES,
+  WATER_SPRITES,
 } from '../game/sprites';
+import { useWaterFrame } from '../game/waterClock';
+import { isTallGrass } from '../game/terrain';
 import { Building, roadPiece, villagesInRect } from '../game/village';
 import { getRoadMask, getTile, getTreeVariant, TileType, WORLD_SEED } from '../game/world';
 
@@ -34,18 +40,11 @@ const Tile = memo(function Tile({
   const y = row * TILE_SIZE;
   const pos = { left: x, top: y };
 
-  if (type === 'bridge') {
-    const mask = getRoadMask(col, row);
-    const rotation = mask & 10 ? 0 : 90; // east/west neighbours: planks run west-east
-    return (
-      <View style={[styles.tile, pos, { backgroundColor: TILE_COLORS.water }]}>
-        <Image
-          source={BRIDGE_SPRITE}
-          style={[styles.tile, PIXELATED, { transform: [{ rotate: `${rotation}deg` }] }]}
-          resizeMode="stretch"
-        />
-      </View>
-    );
+  if (type === 'water' || type === 'bridge') return <WaterTile col={col} row={row} bridge={type === 'bridge'} />;
+
+  if (type === 'paved') {
+    const paved = PAVED_SPRITES[Math.floor(hash2(col, row, WORLD_SEED + 9) * PAVED_SPRITES.length)];
+    return <Image source={paved} style={[styles.tile, pos, PIXELATED]} resizeMode="stretch" />;
   }
 
   // Grass, tall grass, roads, buildings and the ground under trees all sit on a grass tile.
@@ -64,8 +63,10 @@ const Tile = memo(function Tile({
         </View>
       );
     }
-    if (type !== 'tallgrass') {
-      return <Image source={ground} style={[styles.tile, pos, PIXELATED]} resizeMode="stretch" />;
+    // Tall grass also grows under trees, so a tree inside a patch stands in the tall grass.
+    if (type !== 'tallgrass' && !(type === 'tree' && isTallGrass(col, row))) {
+      if (type !== 'grass' && type !== 'tree') return <Image source={ground} style={[styles.tile, pos, PIXELATED]} resizeMode="stretch" />;
+      return <GrassTile ground={ground} col={col} row={row} pos={pos} />;
     }
     const tall = TALL_GRASS_SPRITES[Math.floor(hash2(col, row, WORLD_SEED + 7) * TALL_GRASS_SPRITES.length)];
     return (
@@ -96,6 +97,72 @@ const Tree = memo(function Tree({ col, row }: { col: number; row: number }) {
       style={[styles.tree, PIXELATED, { left, top: baseY - TREE_BASE_Y, zIndex: zForY(baseY) }]}
       resizeMode="stretch"
     />
+  );
+});
+
+const isWater = (t: TileType) => t === 'water' || t === 'bridge';
+const isTallAt = (col: number, row: number) => {
+  const t = getTile(col, row);
+  return t === 'tallgrass' || (t === 'tree' && isTallGrass(col, row));
+};
+const turn = (k: number) => ({ transform: [{ rotate: `${k * 90}deg` }] });
+
+/**
+ * Which edge pieces a tile needs, given a test for "the neighbour at (dc, dr) is the other kind".
+ * source: 0 edge, 1 corner (two adjacent sides), 2 inner (diagonal only); rotation in quarter turns.
+ */
+function edgePieces(other: (dc: number, dr: number) => boolean) {
+  const sides = [other(0, -1), other(1, 0), other(0, 1), other(-1, 0)]; // N, E, S, W
+  const out: { source: number; rotation: number }[] = [];
+  const used = [false, false, false, false];
+  for (let k = 0; k < 4; k++) {
+    const next = (k + 1) % 4;
+    if (sides[k] && sides[next]) {
+      out.push({ source: 1, rotation: k }); // corner k joins sides k and k+1 (N+E, E+S, S+W, W+N)
+      used[k] = used[next] = true;
+    }
+  }
+  for (let k = 0; k < 4; k++) if (sides[k] && !used[k]) out.push({ source: 0, rotation: k });
+  const diags = [other(1, -1), other(1, 1), other(-1, 1), other(-1, -1)]; // NE, SE, SW, NW
+  for (let k = 0; k < 4; k++) if (diags[k] && !sides[k] && !sides[(k + 1) % 4]) out.push({ source: 2, rotation: k });
+  return out;
+}
+
+/** Short grass, with ragged tall-grass blades along the sides that touch a tall-grass patch. */
+function GrassTile({ ground, col, row, pos }: { ground: ImageSourcePropType; col: number; row: number; pos: object }) {
+  const fringe = edgePieces((dc, dr) => isTallAt(col + dc, row + dr));
+  if (fringe.length === 0) return <Image source={ground} style={[styles.tile, pos, PIXELATED]} resizeMode="stretch" />;
+  const sources = [FRINGE_SPRITES.edge, FRINGE_SPRITES.corner, FRINGE_SPRITES.inner];
+  return (
+    <View style={[styles.tile, pos]}>
+      <Image source={ground} style={[styles.tile, PIXELATED]} resizeMode="stretch" />
+      {fringe.map((f, i) => (
+        <Image key={i} source={sources[f.source]} style={[styles.tile, PIXELATED, turn(f.rotation)]} resizeMode="stretch" />
+      ))}
+    </View>
+  );
+}
+
+/** Animated water with grass banks drawn wherever a neighbour is land. */
+const WaterTile = memo(function WaterTile({ col, row, bridge }: { col: number; row: number; bridge: boolean }) {
+  const frame = useWaterFrame();
+  const banks = useMemo(() => edgePieces((dc, dr) => !isWater(getTile(col + dc, row + dr))), [col, row]);
+  const sources = [SHORE_SPRITES.edge, SHORE_SPRITES.corner, SHORE_SPRITES.inner];
+
+  return (
+    <View style={[styles.tile, { left: col * TILE_SIZE, top: row * TILE_SIZE }]}>
+      <Image source={WATER_SPRITES[frame]} style={[styles.tile, PIXELATED]} resizeMode="stretch" />
+      {banks.map((b, i) => (
+        <Image key={i} source={sources[b.source]} style={[styles.tile, PIXELATED, turn(b.rotation)]} resizeMode="stretch" />
+      ))}
+      {bridge && (
+        <Image
+          source={BRIDGE_SPRITE}
+          style={[styles.tile, PIXELATED, turn(getRoadMask(col, row) & 10 ? 0 : 1)]}
+          resizeMode="stretch"
+        />
+      )}
+    </View>
   );
 });
 

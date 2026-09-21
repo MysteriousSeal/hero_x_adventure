@@ -1,10 +1,10 @@
 import { HERO_HITBOX, TILE_SIZE } from './config';
 import { fbm } from './noise';
 import { BaseTile, generateTile, WORLD_SEED } from './terrain';
-import { buildingTileAt, getVillage, inClearing, isRoad } from './village';
+import { buildingTileAt, getVillage, inClearing, isRoad, isStreet } from './village';
 
 export { WORLD_SEED };
-export type TileType = BaseTile | 'road' | 'bridge' | 'building';
+export type TileType = BaseTile | 'road' | 'paved' | 'bridge' | 'building';
 
 export const SOLID_TILES: ReadonlySet<TileType> = new Set(['tree', 'water', 'rock', 'building']);
 
@@ -15,6 +15,7 @@ const MAX_CACHED_CHUNKS = 512;
 function composeTile(col: number, row: number): TileType {
   if (buildingTileAt(col, row)) return 'building';
   const base = generateTile(col, row);
+  if (isStreet(col, row)) return 'paved';
   if (isRoad(col, row)) return base === 'water' ? 'bridge' : 'road';
   if ((base === 'tree' || base === 'tallgrass') && inClearing(col, row)) return 'grass';
   return base;

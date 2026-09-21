@@ -4,14 +4,16 @@ import { generateTile, WORLD_SEED } from './terrain';
 /** The world is cut into regions of this many tiles; each holds at most one village. */
 export const REGION = 56;
 const VILLAGE_CHANCE = 0.8;
-const STREET_HALF = 11; // the main street spans hubCol ± this
-const BOX_W = 12; // village clearing: hubCol ± this...
-const BOX_UP = 5; // ...and this many rows above the street
+const STREET_HALF = 13; // the main street spans hubCol ± this
+const BOX_W = 14; // village clearing: hubCol ± this...
+const BOX_UP = 6; // ...and this many rows above the street
 const BOX_DOWN = 6; // ...and below it
 const MAX_BRIDGE_TILES = 24; // a road needing more water than this is not built
 
-export type BuildingKind = 'townhall' | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-export const HOUSE_KINDS = 8;
+export type BuildingKind = 'townhall' | 'tavern' | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+/** Houses picked at random. Kind 3 is left out: it has a tavern sign, and each village gets exactly one tavern. */
+const HOUSE_KINDS: BuildingKind[] = [0, 1, 2, 4, 5, 6, 7];
 
 /**
  * Sprite size in tiles, and how many of the bottom rows are solid. Only the walls block the
@@ -20,7 +22,8 @@ export const HOUSE_KINDS = 8;
 const HOUSE = { w: 4, h: 4, solid: 2 };
 export const BUILDING_SIZES: Record<BuildingKind, { w: number; h: number; solid: number }> = {
   0: HOUSE, 1: HOUSE, 2: HOUSE, 3: HOUSE, 4: HOUSE, 5: HOUSE, 6: HOUSE, 7: HOUSE,
-  townhall: { w: 4, h: 4, solid: 2 },
+  townhall: { w: 5, h: 5, solid: 2 },
+  tavern: { w: 5, h: 5, solid: 2 },
 };
 
 export interface Building {
@@ -69,14 +72,16 @@ function layout(hubCol: number, hubRow: number, rand: () => number): Building[] 
     const { w, h } = BUILDING_SIZES[kind];
     out.push({ kind, col, row, w, h });
   };
-  add('townhall', hubCol - 2, hubRow - 4);
+  add('townhall', hubCol - 2, hubRow - 5);
 
-  const pick = () => Math.floor(rand() * HOUSE_KINDS) as BuildingKind;
+  const pick = () => HOUSE_KINDS[Math.floor(rand() * HOUSE_KINDS.length)];
   // North of the street, either side of the town hall; fronts sit on the street.
+  // The first building on one randomly chosen side is the village's tavern.
+  const tavernSide = rand() < 0.5 ? 1 : -1;
   for (const side of [1, -1]) {
-    let edge = side === 1 ? hubCol + 3 : hubCol - 3; // first free column next to the hall
-    for (let n = 1 + Math.floor(rand() * 3); n > 0; n--) {
-      const kind = pick();
+    let edge = side === 1 ? hubCol + 4 : hubCol - 4; // first free column next to the hall
+    for (let n = 1 + Math.floor(rand() * 3), first = true; n > 0; n--, first = false) {
+      const kind: BuildingKind = first && side === tavernSide ? 'tavern' : pick();
       const { w, h } = BUILDING_SIZES[kind];
       const col = side === 1 ? edge : edge - w + 1;
       if (col < hubCol - STREET_HALF || col + w - 1 > hubCol + STREET_HALF) break;
@@ -90,7 +95,7 @@ function layout(hubCol: number, hubRow: number, rand: () => number): Building[] 
     const kind = pick();
     const { w } = BUILDING_SIZES[kind];
     if (x + w - 1 > hubCol + STREET_HALF) break;
-    if (rand() < 0.8) add(kind, x, hubRow + 2);
+    if (rand() < 0.7) add(kind, x, hubRow + 2);
     x += w + 1 + Math.floor(rand() * 2);
   }
   return out;
@@ -105,7 +110,7 @@ export function getVillage(rx: number, ry: number): Village | null {
   const rand = rng(hash2(rx, ry, WORLD_SEED + 30));
   let village: Village | null = null;
   if (rand() < VILLAGE_CHANCE) {
-    for (let attempt = 0; attempt < 8 && !village; attempt++) {
+    for (let attempt = 0; attempt < 20 && !village; attempt++) {
       const hubCol = rx * REGION + 16 + Math.floor(rand() * (REGION - 32));
       const hubRow = ry * REGION + 16 + Math.floor(rand() * (REGION - 32));
       if (!siteIsFlat(hubCol, hubRow)) continue;
@@ -197,12 +202,17 @@ function roadTiles(rx: number, ry: number, dir: 'e' | 's'): Set<string> | null {
   return result;
 }
 
+/** Whether this tile is on a village's main street (paved). */
+export function isStreet(col: number, row: number): boolean {
+  const v = villageAtTile(col, row);
+  return !!v && row === v.hubRow && Math.abs(col - v.hubCol) <= STREET_HALF;
+}
+
 /** Whether a road, bridge or village street runs through this tile. */
 export function isRoad(col: number, row: number): boolean {
   const rx = regionOf(col);
   const ry = regionOf(row);
-  const own = getVillage(rx, ry);
-  if (own && row === own.hubRow && Math.abs(col - own.hubCol) <= STREET_HALF) return true;
+  if (isStreet(col, row)) return true;
   const k = key(col, row);
   for (let oy = -1; oy <= 0; oy++) {
     for (let ox = -1; ox <= 0; ox++) {
