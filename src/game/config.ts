@@ -9,3 +9,9 @@ export const HERO_HITBOX = { width: 20, height: 16 };
 
 /** Hero drawn size (sprite frame size). */
 export const HERO_SIZE = { width: 48, height: 56 };
+
+/** How long one sword swing lasts, in seconds (the hero holds still for it). */
+export const ATTACK_TIME = 0.36;
+
+/** How far the hero leans into the swing, in game units. */
+export const ATTACK_LUNGE = 4;

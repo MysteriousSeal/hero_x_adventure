@@ -185,6 +185,19 @@ export const CHARACTERS: Record<CharacterId, { name: string; sprites: CharacterS
   },
 };
 
+/**
+ * Sword swing, drawn as an upward slash centred on the hero's chest and rotated to face
+ * the other directions. One image per frame of the swing.
+ */
+export const SLASH_SPRITES: ImageSourcePropType[] = [
+  require('../../assets/sprites/slash_0.png'),
+  require('../../assets/sprites/slash_1.png'),
+  require('../../assets/sprites/slash_2.png'),
+];
+
+/** Slash sprite size in game units (32 native pixels). */
+export const SLASH_SIZE = 64;
+
 /** Placeholder colours used until sprites are provided. */
 export const TILE_COLORS: Record<TileType, string> = {
   grass: '#5fae4e',

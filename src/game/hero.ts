@@ -1,4 +1,4 @@
-import { HERO_HITBOX, HERO_SPEED } from './config';
+import { ATTACK_TIME, HERO_HITBOX, HERO_SPEED } from './config';
 import { isSolidAt } from './world';
 
 export type Direction = 'up' | 'down' | 'left' | 'right';
@@ -9,6 +9,8 @@ export interface HeroState {
   y: number;
   facing: Direction;
   moving: boolean;
+  /** Seconds left in the current sword swing; 0 when not attacking. */
+  attack: number;
 }
 
 const VECTORS: Record<Direction, { dx: number; dy: number }> = {
@@ -27,8 +29,18 @@ function boxCollides(x: number, y: number): boolean {
   );
 }
 
-/** Moves the hero one step (Zelda style: one of 4 directions, no diagonals). */
-export function stepHero(hero: HeroState, dir: Direction | null, dt: number): HeroState {
+/**
+ * Advances the hero one frame (Zelda style: one of 4 directions, no diagonals).
+ * A swing pins him in place until it finishes; a new one can only start once it has.
+ */
+export function stepHero(hero: HeroState, dir: Direction | null, dt: number, attack = false): HeroState {
+  if (hero.attack > 0) {
+    // Mid-swing: the hero holds still and keeps facing the way the swing started.
+    return { ...hero, attack: Math.max(0, hero.attack - dt) };
+  }
+  if (attack) {
+    return { ...hero, facing: dir ?? hero.facing, moving: false, attack: ATTACK_TIME };
+  }
   if (!dir) return hero.moving ? { ...hero, moving: false } : hero;
 
   const { dx, dy } = VECTORS[dir];
@@ -42,5 +54,5 @@ export function stepHero(hero: HeroState, dir: Direction | null, dt: number): He
   if (!boxCollides(nx, hero.y)) x = nx;
   if (!boxCollides(x, ny)) y = ny;
 
-  return { x, y, facing: dir, moving: x !== hero.x || y !== hero.y };
+  return { ...hero, x, y, facing: dir, moving: x !== hero.x || y !== hero.y };
 }

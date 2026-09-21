@@ -15,9 +15,11 @@ const KEY_MAP: Record<string, Direction> = {
   q: 'left',
 };
 
+const ATTACK_KEYS = [' ', 'x', 'k', 'Enter'];
+
 /**
- * Tracks which directions are held (touch D-pad + keyboard on web).
- * The most recently pressed direction wins.
+ * Tracks which directions are held (touch D-pad + keyboard on web) and whether an attack
+ * was requested. The most recently pressed direction wins.
  */
 export function useInput() {
   const held = useRef<Direction[]>([]);
@@ -30,9 +32,25 @@ export function useInput() {
   };
   const current = (): Direction | null => held.current[held.current.length - 1] ?? null;
 
+  // An attack is a one-shot event: the game loop consumes it on the next frame.
+  const queuedAttack = useRef(false);
+  const pressAttack = () => {
+    queuedAttack.current = true;
+  };
+  const takeAttack = (): boolean => {
+    const queued = queuedAttack.current;
+    queuedAttack.current = false;
+    return queued;
+  };
+
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const onDown = (e: KeyboardEvent) => {
+      if (ATTACK_KEYS.includes(e.key)) {
+        e.preventDefault();
+        if (!e.repeat) pressAttack();
+        return;
+      }
       const dir = KEY_MAP[e.key];
       if (!dir) return;
       e.preventDefault();
@@ -50,5 +68,5 @@ export function useInput() {
     };
   }, []);
 
-  return { press, release, current };
+  return { press, release, current, pressAttack, takeAttack };
 }

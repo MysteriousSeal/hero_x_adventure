@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { AttackButton } from './AttackButton';
 import { DPad } from './DPad';
 import { Hero } from './Hero';
 import { TileMap } from './TileMap';
@@ -17,7 +18,7 @@ const TILE_PX = 16; // native pixels per tile
 export function Game({ character }: { character: CharacterId }) {
   const { width, height } = useWindowDimensions();
   const input = useInput();
-  const [hero, setHero] = useState<HeroState>({ ...HERO_START, facing: 'down', moving: false });
+  const [hero, setHero] = useState<HeroState>({ ...HERO_START, facing: 'down', moving: false, attack: 0 });
   const [time, setTime] = useState(0);
 
   useEffect(() => {
@@ -26,7 +27,8 @@ export function Game({ character }: { character: CharacterId }) {
     const tick = (now: number) => {
       const dt = Math.min((now - last) / 1000, MAX_DT);
       last = now;
-      setHero((h) => stepHero(h, input.current(), dt));
+      const attack = input.takeAttack();
+      setHero((h) => stepHero(h, input.current(), dt, attack));
       setTime(now);
       raf = requestAnimationFrame(tick);
     };
@@ -67,6 +69,9 @@ export function Game({ character }: { character: CharacterId }) {
       <View style={styles.controls} pointerEvents="box-none">
         <DPad onPress={input.press} onRelease={input.release} />
       </View>
+      <View style={styles.attack} pointerEvents="box-none">
+        <AttackButton onPress={input.pressAttack} />
+      </View>
     </View>
   );
 }
@@ -74,4 +79,5 @@ export function Game({ character }: { character: CharacterId }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#111', overflow: 'hidden' },
   controls: { position: 'absolute', left: 24, bottom: 24 },
+  attack: { position: 'absolute', right: 32, bottom: 48 },
 });
