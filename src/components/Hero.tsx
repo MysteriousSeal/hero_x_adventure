@@ -1,13 +1,16 @@
 import { Image, StyleSheet, View } from 'react-native';
 import { HERO_HITBOX, HERO_SIZE } from '../game/config';
 import type { HeroState } from '../game/hero';
-import { HERO_COLOR, HERO_SPRITES } from '../game/sprites';
+import { HERO_COLOR, HERO_SPRITES, PIXELATED } from '../game/sprites';
 
-const FRAME_MS = 150;
+const FRAME_MS = 140;
+// Walk cycle over [standing, step A, step B]: stand, A, stand, B.
+const WALK_CYCLE = [0, 1, 0, 2];
 
 export function Hero({ hero, time }: { hero: HeroState; time: number }) {
   const frames = HERO_SPRITES[hero.facing];
-  const frame = hero.moving && frames ? frames[Math.floor(time / FRAME_MS) % frames.length] : frames?.[0];
+  const step = hero.moving ? WALK_CYCLE[Math.floor(time / FRAME_MS) % WALK_CYCLE.length] : 0;
+  const frame = frames?.[step];
 
   // Sprite is centred horizontally on the hitbox, feet aligned with its bottom.
   const style = [
@@ -19,7 +22,7 @@ export function Hero({ hero, time }: { hero: HeroState; time: number }) {
   ];
 
   return frame ? (
-    <Image source={frame} style={style} resizeMode="stretch" />
+    <Image source={frame} style={[style, PIXELATED]} resizeMode="stretch" />
   ) : (
     <View style={[style, styles.placeholder]}>
       <View style={[styles.nose, NOSE[hero.facing]]} />

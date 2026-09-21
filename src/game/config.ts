@@ -8,4 +8,4 @@ export const HERO_SPEED = 120;
 export const HERO_HITBOX = { width: 20, height: 16 };
 
 /** Hero drawn size (sprite frame size). */
-export const HERO_SIZE = { width: 28, height: 32 };
+export const HERO_SIZE = { width: 32, height: 32 };

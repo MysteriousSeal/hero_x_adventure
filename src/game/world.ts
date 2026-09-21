@@ -80,3 +80,14 @@ function findSpawn(): { x: number; y: number } {
 }
 
 export const HERO_START = findSpawn();
+
+export const TREE_VARIANTS = 3;
+
+/**
+ * Which kind of tree grows at a tile. It follows a very low-frequency noise field,
+ * so every forest (and the trees around it) is made of one single kind of tree.
+ */
+export function getTreeVariant(col: number, row: number): number {
+  const n = fbm(col * 0.015, row * 0.015, WORLD_SEED + 3, 2);
+  return n < 0.45 ? 0 : n < 0.56 ? 1 : 2;
+}

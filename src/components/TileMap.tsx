@@ -1,13 +1,31 @@
 import { memo } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { TILE_SIZE } from '../game/config';
-import { TILE_COLORS, TILE_SPRITES } from '../game/sprites';
-import { getTile, TileType } from '../game/world';
+import { PIXELATED, TILE_COLORS, TILE_SPRITES, TREE_SPRITES } from '../game/sprites';
+import { getTile, getTreeVariant, TileType } from '../game/world';
 
-const Tile = memo(function Tile({ type, x, y }: { type: TileType; x: number; y: number }) {
+const Tile = memo(function Tile({
+  type,
+  variant,
+  x,
+  y,
+}: {
+  type: TileType;
+  variant: number;
+  x: number;
+  y: number;
+}) {
+  // Trees have a transparent background, so they stand on a grass tile.
+  if (type === 'tree') {
+    return (
+      <View style={[styles.tile, { left: x, top: y, backgroundColor: TILE_COLORS.grass }]}>
+        <Image source={TREE_SPRITES[variant]} style={[styles.tile, PIXELATED]} resizeMode="stretch" />
+      </View>
+    );
+  }
   const sprite = TILE_SPRITES[type];
   return sprite ? (
-    <Image source={sprite} style={[styles.tile, { left: x, top: y }]} resizeMode="stretch" />
+    <Image source={sprite} style={[styles.tile, { left: x, top: y }, PIXELATED]} resizeMode="stretch" />
   ) : (
     <View style={[styles.tile, { left: x, top: y, backgroundColor: TILE_COLORS[type] }]} />
   );
@@ -29,7 +47,16 @@ export const TileMap = memo(function TileMap({ startCol, startRow, cols, rows }:
   const tiles = [];
   for (let r = startRow; r < startRow + rows; r++) {
     for (let c = startCol; c < startCol + cols; c++) {
-      tiles.push(<Tile key={`${c},${r}`} type={getTile(c, r)} x={c * TILE_SIZE} y={r * TILE_SIZE} />);
+      const type = getTile(c, r);
+      tiles.push(
+        <Tile
+          key={`${c},${r}`}
+          type={type}
+          variant={type === 'tree' ? getTreeVariant(c, r) : 0}
+          x={c * TILE_SIZE}
+          y={r * TILE_SIZE}
+        />,
+      );
     }
   }
   return <>{tiles}</>;
