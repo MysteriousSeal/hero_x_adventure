@@ -109,28 +109,80 @@ export const BRIDGE_SPRITE: ImageSourcePropType = require('../../assets/sprites/
 // Keeps pixel art crisp when scaled up (honoured on web only).
 export const PIXELATED = { imageRendering: 'pixelated' } as object;
 
-/** Hero frames per facing direction: [standing, step A, step B]. */
-export const HERO_SPRITES: Partial<Record<Direction, ImageSourcePropType[]>> = {
-  down: [
-    require('../../assets/sprites/hero_down_0.png'),
-    require('../../assets/sprites/hero_down_1.png'),
-    require('../../assets/sprites/hero_down_2.png'),
-  ],
-  up: [
-    require('../../assets/sprites/hero_up_0.png'),
-    require('../../assets/sprites/hero_up_1.png'),
-    require('../../assets/sprites/hero_up_2.png'),
-  ],
-  left: [
-    require('../../assets/sprites/hero_left_0.png'),
-    require('../../assets/sprites/hero_left_1.png'),
-    require('../../assets/sprites/hero_left_2.png'),
-  ],
-  right: [
-    require('../../assets/sprites/hero_right_0.png'),
-    require('../../assets/sprites/hero_right_1.png'),
-    require('../../assets/sprites/hero_right_2.png'),
-  ],
+export type CharacterId = 'boy' | 'girl';
+export type CharacterSprites = Record<Direction, ImageSourcePropType[]>;
+
+/**
+ * Playable heroes. Frames per facing direction: [idle, walk 1, walk 2, walk 3, walk 4],
+ * 24x28 native pixels each.
+ */
+export const CHARACTERS: Record<CharacterId, { name: string; sprites: CharacterSprites }> = {
+  boy: {
+    name: 'BOY',
+    sprites: {
+    down: [
+      require('../../assets/sprites/boy_down_0.png'),
+      require('../../assets/sprites/boy_down_1.png'),
+      require('../../assets/sprites/boy_down_2.png'),
+      require('../../assets/sprites/boy_down_3.png'),
+      require('../../assets/sprites/boy_down_4.png'),
+    ],
+    up: [
+      require('../../assets/sprites/boy_up_0.png'),
+      require('../../assets/sprites/boy_up_1.png'),
+      require('../../assets/sprites/boy_up_2.png'),
+      require('../../assets/sprites/boy_up_3.png'),
+      require('../../assets/sprites/boy_up_4.png'),
+    ],
+    left: [
+      require('../../assets/sprites/boy_left_0.png'),
+      require('../../assets/sprites/boy_left_1.png'),
+      require('../../assets/sprites/boy_left_2.png'),
+      require('../../assets/sprites/boy_left_3.png'),
+      require('../../assets/sprites/boy_left_4.png'),
+    ],
+    right: [
+      require('../../assets/sprites/boy_right_0.png'),
+      require('../../assets/sprites/boy_right_1.png'),
+      require('../../assets/sprites/boy_right_2.png'),
+      require('../../assets/sprites/boy_right_3.png'),
+      require('../../assets/sprites/boy_right_4.png'),
+    ],
+  },
+  },
+  girl: {
+    name: 'GIRL',
+    sprites: {
+    down: [
+      require('../../assets/sprites/girl_down_0.png'),
+      require('../../assets/sprites/girl_down_1.png'),
+      require('../../assets/sprites/girl_down_2.png'),
+      require('../../assets/sprites/girl_down_3.png'),
+      require('../../assets/sprites/girl_down_4.png'),
+    ],
+    up: [
+      require('../../assets/sprites/girl_up_0.png'),
+      require('../../assets/sprites/girl_up_1.png'),
+      require('../../assets/sprites/girl_up_2.png'),
+      require('../../assets/sprites/girl_up_3.png'),
+      require('../../assets/sprites/girl_up_4.png'),
+    ],
+    left: [
+      require('../../assets/sprites/girl_left_0.png'),
+      require('../../assets/sprites/girl_left_1.png'),
+      require('../../assets/sprites/girl_left_2.png'),
+      require('../../assets/sprites/girl_left_3.png'),
+      require('../../assets/sprites/girl_left_4.png'),
+    ],
+    right: [
+      require('../../assets/sprites/girl_right_0.png'),
+      require('../../assets/sprites/girl_right_1.png'),
+      require('../../assets/sprites/girl_right_2.png'),
+      require('../../assets/sprites/girl_right_3.png'),
+      require('../../assets/sprites/girl_right_4.png'),
+    ],
+  },
+  },
 };
 
 /** Placeholder colours used until sprites are provided. */

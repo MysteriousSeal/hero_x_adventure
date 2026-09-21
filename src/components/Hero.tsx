@@ -2,16 +2,16 @@ import { Image, StyleSheet, View } from 'react-native';
 import { HERO_HITBOX, HERO_SIZE } from '../game/config';
 import type { HeroState } from '../game/hero';
 import { zForY } from './TileMap';
-import { HERO_COLOR, HERO_SPRITES, PIXELATED } from '../game/sprites';
+import { CharacterSprites, HERO_COLOR, PIXELATED } from '../game/sprites';
 
-const FRAME_MS = 140;
-// Walk cycle over [standing, step A, step B]: stand, A, stand, B.
-const WALK_CYCLE = [0, 1, 0, 2];
+const FRAME_MS = 120;
+// Frame 0 is the idle pose; frames 1-4 are the walk cycle.
+const WALK_CYCLE = [1, 2, 3, 4];
 
 const snap = (v: number) => Math.round(v / 2) * 2;
 
-export function Hero({ hero, time }: { hero: HeroState; time: number }) {
-  const frames = HERO_SPRITES[hero.facing];
+export function Hero({ hero, time, sprites }: { hero: HeroState; time: number; sprites: CharacterSprites }) {
+  const frames = sprites[hero.facing];
   const step = hero.moving ? WALK_CYCLE[Math.floor(time / FRAME_MS) % WALK_CYCLE.length] : 0;
   const frame = frames?.[step];
 
