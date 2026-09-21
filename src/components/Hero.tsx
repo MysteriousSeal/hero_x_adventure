@@ -1,11 +1,14 @@
 import { Image, StyleSheet, View } from 'react-native';
 import { HERO_HITBOX, HERO_SIZE } from '../game/config';
 import type { HeroState } from '../game/hero';
+import { zForY } from './TileMap';
 import { HERO_COLOR, HERO_SPRITES, PIXELATED } from '../game/sprites';
 
 const FRAME_MS = 140;
 // Walk cycle over [standing, step A, step B]: stand, A, stand, B.
 const WALK_CYCLE = [0, 1, 0, 2];
+
+const snap = (v: number) => Math.round(v / 2) * 2;
 
 export function Hero({ hero, time }: { hero: HeroState; time: number }) {
   const frames = HERO_SPRITES[hero.facing];
@@ -16,8 +19,10 @@ export function Hero({ hero, time }: { hero: HeroState; time: number }) {
   const style = [
     styles.hero,
     {
-      left: hero.x + (HERO_HITBOX.width - HERO_SIZE.width) / 2,
-      top: hero.y + HERO_HITBOX.height - HERO_SIZE.height,
+      zIndex: zForY(hero.y + HERO_HITBOX.height),
+      // snapped to native pixels (2 game units) so the sprite never lands between pixels
+      left: snap(hero.x + (HERO_HITBOX.width - HERO_SIZE.width) / 2),
+      top: snap(hero.y + HERO_HITBOX.height - HERO_SIZE.height),
     },
   ];
 

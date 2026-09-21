@@ -10,7 +10,8 @@ import { useInput } from './src/game/input';
 import { HERO_START } from './src/game/world';
 
 const MAX_DT = 0.05; // clamp long frames (tab switch, hitch) so the hero can't tunnel
-const VIEW_ROWS = 12; // tiles visible vertically; horizontal count follows the aspect ratio
+const VIEW_ROWS = 9; // tiles visible vertically (the Game Boy screen is 10x9 tiles)
+const TILE_PX = 16; // native pixels per tile
 
 export default function App() {
   const { width, height } = useWindowDimensions();
@@ -34,11 +35,14 @@ export default function App() {
   }, []);
 
   // The camera is centred on the hero; the world layer is shifted and scaled to match.
-  const scale = height / (VIEW_ROWS * TILE_SIZE);
+  // Whole device pixels per native pixel, so pixel art stays crisp and tiles never show seams.
+  const pixel = Math.max(1, Math.floor(height / (VIEW_ROWS * TILE_PX)));
+  const scale = pixel / (TILE_SIZE / TILE_PX); // game units -> device pixels
+  const snap = (v: number) => Math.round(v * scale) / scale;
   const viewW = width / scale;
   const viewH = height / scale;
-  const camX = hero.x + HERO_HITBOX.width / 2 - viewW / 2;
-  const camY = hero.y + HERO_HITBOX.height / 2 - viewH / 2;
+  const camX = snap(hero.x + HERO_HITBOX.width / 2 - viewW / 2);
+  const camY = snap(hero.y + HERO_HITBOX.height / 2 - viewH / 2);
 
   return (
     <View style={styles.root}>
