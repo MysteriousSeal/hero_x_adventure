@@ -1,0 +1,42 @@
+import { Image, StyleSheet, View } from 'react-native';
+import { HERO_HITBOX, HERO_SIZE } from '../game/config';
+import type { HeroState } from '../game/hero';
+import { HERO_COLOR, HERO_SPRITES } from '../game/sprites';
+
+const FRAME_MS = 150;
+
+export function Hero({ hero, time }: { hero: HeroState; time: number }) {
+  const frames = HERO_SPRITES[hero.facing];
+  const frame = hero.moving && frames ? frames[Math.floor(time / FRAME_MS) % frames.length] : frames?.[0];
+
+  // Sprite is centred horizontally on the hitbox, feet aligned with its bottom.
+  const style = [
+    styles.hero,
+    {
+      left: hero.x + (HERO_HITBOX.width - HERO_SIZE.width) / 2,
+      top: hero.y + HERO_HITBOX.height - HERO_SIZE.height,
+    },
+  ];
+
+  return frame ? (
+    <Image source={frame} style={style} resizeMode="stretch" />
+  ) : (
+    <View style={[style, styles.placeholder]}>
+      <View style={[styles.nose, NOSE[hero.facing]]} />
+    </View>
+  );
+}
+
+// Small marker showing which way the placeholder hero faces.
+const NOSE = StyleSheet.create({
+  up: { top: 2, left: HERO_SIZE.width / 2 - 3 },
+  down: { bottom: 2, left: HERO_SIZE.width / 2 - 3 },
+  left: { left: 2, top: HERO_SIZE.height / 2 - 3 },
+  right: { right: 2, top: HERO_SIZE.height / 2 - 3 },
+});
+
+const styles = StyleSheet.create({
+  hero: { position: 'absolute', width: HERO_SIZE.width, height: HERO_SIZE.height },
+  placeholder: { backgroundColor: HERO_COLOR, borderRadius: 6, borderWidth: 2, borderColor: '#7a1410' },
+  nose: { position: 'absolute', width: 6, height: 6, borderRadius: 3, backgroundColor: '#fff' },
+});
