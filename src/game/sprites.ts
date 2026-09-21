@@ -1,6 +1,6 @@
 import type { ImageSourcePropType } from 'react-native';
 import type { Direction } from './hero';
-import type { TileType } from './map';
+import type { TileType } from './world';
 
 /**
  * Sprite registry. While an entry is `undefined`, the game draws a coloured
@@ -20,10 +20,10 @@ export const HERO_SPRITES: Partial<Record<Direction, ImageSourcePropType[]>> = {
 /** Placeholder colours used until sprites are provided. */
 export const TILE_COLORS: Record<TileType, string> = {
   grass: '#5fae4e',
-  path: '#d9b779',
+  sand: '#e6d58f',
   tree: '#1f6b34',
   water: '#3b7dd8',
-  wall: '#7a7a85',
+  rock: '#7a7a85',
 };
 
 export const HERO_COLOR = '#e8433b';

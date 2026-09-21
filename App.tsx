@@ -4,11 +4,13 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { DPad } from './src/components/DPad';
 import { Hero } from './src/components/Hero';
 import { TileMap } from './src/components/TileMap';
+import { HERO_HITBOX, TILE_SIZE } from './src/game/config';
 import { HeroState, stepHero } from './src/game/hero';
 import { useInput } from './src/game/input';
-import { HERO_START, MAP_HEIGHT, MAP_WIDTH } from './src/game/map';
+import { HERO_START } from './src/game/world';
 
 const MAX_DT = 0.05; // clamp long frames (tab switch, hitch) so the hero can't tunnel
+const VIEW_ROWS = 12; // tiles visible vertically; horizontal count follows the aspect ratio
 
 export default function App() {
   const { width, height } = useWindowDimensions();
@@ -31,23 +33,31 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const scale = Math.min(width / MAP_WIDTH, height / MAP_HEIGHT);
+  // The camera is centred on the hero; the world layer is shifted and scaled to match.
+  const scale = height / (VIEW_ROWS * TILE_SIZE);
+  const viewW = width / scale;
+  const viewH = height / scale;
+  const camX = hero.x + HERO_HITBOX.width / 2 - viewW / 2;
+  const camY = hero.y + HERO_HITBOX.height / 2 - viewH / 2;
 
   return (
     <View style={styles.root}>
       <StatusBar hidden />
-      <View style={{ width: MAP_WIDTH * scale, height: MAP_HEIGHT * scale, overflow: 'hidden' }}>
-        <View
-          style={{
-            width: MAP_WIDTH,
-            height: MAP_HEIGHT,
-            transformOrigin: 'top left',
-            transform: [{ scale }],
-          }}
-        >
-          <TileMap />
-          <Hero hero={hero} time={time} />
-        </View>
+      <View
+        style={{
+          width: viewW,
+          height: viewH,
+          transformOrigin: 'top left',
+          transform: [{ scale }, { translateX: -camX }, { translateY: -camY }],
+        }}
+      >
+        <TileMap
+          startCol={Math.floor(camX / TILE_SIZE)}
+          startRow={Math.floor(camY / TILE_SIZE)}
+          cols={Math.ceil(viewW / TILE_SIZE) + 1}
+          rows={Math.ceil(viewH / TILE_SIZE) + 1}
+        />
+        <Hero hero={hero} time={time} />
       </View>
       <View style={styles.controls} pointerEvents="box-none">
         <DPad onPress={input.press} onRelease={input.release} />
@@ -57,6 +67,6 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' },
+  root: { flex: 1, backgroundColor: '#111', overflow: 'hidden' },
   controls: { position: 'absolute', left: 24, bottom: 24 },
 });

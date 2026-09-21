@@ -1,5 +1,5 @@
 import { HERO_HITBOX, HERO_SPEED } from './config';
-import { isSolidAt } from './map';
+import { isSolidAt } from './world';
 
 export type Direction = 'up' | 'down' | 'left' | 'right';
 
